@@ -1,0 +1,23 @@
+name: s15-sf-fuzz
+on: push
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: tree under test
+        run: git log -3 --format='%H %T %s'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl, mbstring, xml, ctype, curl, dom, libxml, iconv, ldap, zip
+      - name: composer install (monorepo root)
+        run: composer install --no-interaction --no-progress --prefer-dist --ignore-platform-req=ext-* 2>&1 | tail -5
+      - name: fuzz seed 1
+        run: php sf_fuzz.php 1 2500
+      - name: fuzz seed 2
+        if: always()
+        run: php sf_fuzz.php 2 2500
