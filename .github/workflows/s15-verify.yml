@@ -1,0 +1,66 @@
+name: s15-verify
+on: push
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        component:
+          - src/Symfony/Component/Yaml
+          - src/Symfony/Component/DependencyInjection
+          - src/Symfony/Component/Routing
+          - src/Symfony/Component/Translation
+          - src/Symfony/Component/Validator
+          - src/Symfony/Component/Serializer
+          - src/Symfony/Component/Config
+          - src/Symfony/Bundle/FrameworkBundle
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 4
+      - name: tree under test (the commit below the CI commit is the one tested)
+        run: git log -3 --format='%H %T %s'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: intl, mbstring, xml, ctype, curl, dom, libxml, iconv, zip, ldap, sodium
+          tools: composer
+      - name: composer update (monorepo root)
+        env:
+          COMPOSER_ROOT_VERSION: 6.4.x-dev
+        run: composer update --no-interaction --no-progress --prefer-dist --ignore-platform-reqs 2>&1 | tail -5
+      - name: run the component test suite
+        run: ./phpunit ${{ matrix.component }} --colors=never
+
+  new-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 4
+      - run: git log -3 --format='%H %T %s'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: intl, mbstring, xml, ctype, curl, dom, libxml, iconv, zip
+          tools: composer
+      - name: composer update (monorepo root)
+        env:
+          COMPOSER_ROOT_VERSION: 6.4.x-dev
+        run: composer update --no-interaction --no-progress --prefer-dist --ignore-platform-reqs 2>&1 | tail -5
+      - name: new tests by name
+        if: always()
+        run: |
+          ./phpunit src/Symfony/Component/Yaml --colors=never --filter 'MergeKey|testParseInvalidMergeKey' --testdox
+      - name: coding standards on the changed files
+        if: always()
+        run: |
+          composer global require friendsofphp/php-cs-fixer --no-interaction --no-progress 2>&1 | tail -2
+          export PATH="$(composer global config bin-dir --absolute 2>/dev/null):$PATH"
+          php-cs-fixer --version
+          git diff --name-only HEAD~2 HEAD~1 -- '*.php' | tee /tmp/changed.txt
+          xargs -a /tmp/changed.txt php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.dist.php --using-cache=no
