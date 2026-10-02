@@ -1,0 +1,27 @@
+name: s15-explore-yaml-roundtrip
+on: push
+jobs:
+  roundtrip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          sparse-checkout: |
+            src/Symfony/Component/Yaml
+      - name: tree under test
+        run: git log -3 --format='%H %T %s'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+      - name: install Yaml component dependencies
+        working-directory: src/Symfony/Component/Yaml
+        run: composer install --no-interaction --no-progress
+      - name: round trip fuzz seed 1
+        working-directory: src/Symfony/Component/Yaml
+        run: php yaml_roundtrip.php 1 6000
+      - name: round trip fuzz seed 2
+        if: always()
+        working-directory: src/Symfony/Component/Yaml
+        run: php yaml_roundtrip.php 2 6000
