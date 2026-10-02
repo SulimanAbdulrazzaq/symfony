@@ -18,7 +18,7 @@ set_error_handler(static function (int $no, string $str, string $file, int $line
 
 $bs = chr(92);
 $tokens = ['a', 'b', 'key', 'x', ': ', ':', '- ', '-', '? ', "\n", "\n", "\n", '  ', '    ', ' ', '"', "'", '|', '>', '|-', '>+', '|2', '>1', '&x ', '*x', '&y ', '*y', '!!str ', '!!int ', '!tag ', '! ', '!<tag:yaml.org,2002:str> ', '{', '}', '[', ']', ', ', ',', '# c', ' #c', '---', '--- ', '...', '%YAML 1.2', '%TAG ! tag:x,2000:', '<<: ', '<<', '<<: *x', "\t", '~', 'null', 'true', '0x1F', '1e3', '.inf', '@', '`', $bs, $bs.'n', $bs.'x41', $bs.'u00e9', $bs.'U0001F600', 'é', "\r\n", '1', '2', '0', '3.14', '2001-01-01', '12:30:45', '+', '=', '%', '!', '$', '(', ')', '/', ';', '<', '>'];
-$flagSets = [0, Yaml::PARSE_OBJECT_FOR_MAP, Yaml::PARSE_CUSTOM_TAGS | Yaml::PARSE_CONSTANT | Yaml::PARSE_DATETIME, Yaml::PARSE_EXCEPTION_ON_INVALID_TYPE | Yaml::PARSE_OBJECT, Yaml::PARSE_KEYS_AS_STRINGS];
+$flagSets = [0, Yaml::PARSE_OBJECT_FOR_MAP, Yaml::PARSE_CUSTOM_TAGS | Yaml::PARSE_CONSTANT | Yaml::PARSE_DATETIME, Yaml::PARSE_EXCEPTION_ON_INVALID_TYPE | Yaml::PARSE_OBJECT];
 
 function gen(array $tokens): string
 {
