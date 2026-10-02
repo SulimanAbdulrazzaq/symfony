@@ -1,0 +1,34 @@
+name: s15-yaml-merge-probe
+on: push
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ref: '6.4'
+            php: '8.2'
+          - ref: '7.4'
+            php: '8.4'
+          - ref: '8.2'
+            php: '8.4'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+      - name: fetch the Yaml component of the branch under test
+        run: |
+          git clone --depth 1 --branch ${{ matrix.ref }} https://github.com/symfony/symfony.git /tmp/sf
+          git -C /tmp/sf log -1 --format='%H %T %ad %s'
+          cp yaml_merge_probe.php /tmp/sf/src/Symfony/Component/Yaml/
+      - name: install and probe
+        working-directory: /tmp/sf/src/Symfony/Component/Yaml
+        run: |
+          composer install --no-interaction --no-progress 2>&1 | tail -2
+          php -v | head -1
+          php yaml_merge_probe.php
