@@ -1,0 +1,27 @@
+name: s15-explore-yaml
+on: push
+jobs:
+  explore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          sparse-checkout: |
+            src/Symfony/Component/Yaml
+      - name: tree under test
+        run: git log -3 --format='%H %T %s'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+      - name: install Yaml component dependencies
+        working-directory: src/Symfony/Component/Yaml
+        run: composer install --no-interaction --no-progress
+      - name: fetch the official yaml-test-suite data
+        run: git clone --depth 1 --branch data https://github.com/yaml/yaml-test-suite /tmp/yts && git -C /tmp/yts log -1 --format='%H %ad'
+      - name: compare Yaml::parse() with the suite
+        working-directory: src/Symfony/Component/Yaml
+        run: |
+          php -v | head -1
+          php yaml_suite.php /tmp/yts 0 | tee /tmp/report.txt
