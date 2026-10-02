@@ -18,6 +18,6 @@ jobs:
       - name: composer install
         working-directory: src/Symfony/Component/String
         run: composer install --no-interaction --no-progress
-      - name: wordwrap differential
+      - name: String differential
         working-directory: src/Symfony/Component/String
-        run: php string_diff.php
+        run: php string_diff2.php
