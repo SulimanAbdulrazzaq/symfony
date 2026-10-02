@@ -14,8 +14,10 @@ jobs:
         with:
           php-version: '8.4'
           extensions: intl, mbstring, xml, ctype, curl, dom, libxml, iconv, ldap, zip
-      - name: composer install (monorepo root)
-        run: composer install --no-interaction --no-progress --prefer-dist --ignore-platform-req=ext-* 2>&1 | tail -5
+      - name: composer update (monorepo root)
+        env:
+          COMPOSER_ROOT_VERSION: 8.2.x-dev
+        run: composer update --no-interaction --no-progress --prefer-dist --ignore-platform-reqs 2>&1 | tail -8
       - name: fuzz seed 1
         run: php sf_fuzz.php 1 2500
       - name: fuzz seed 2
