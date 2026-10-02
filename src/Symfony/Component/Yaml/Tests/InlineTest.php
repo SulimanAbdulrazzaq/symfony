@@ -1282,4 +1282,35 @@ class InlineTest extends TestCase
             Inline::parse('{ <<: &a { k: v }, bar: 2 }'),
         );
     }
+
+    public function testParseMergeKeyWithMappingsParsedAsObjects()
+    {
+        $this->assertEquals(
+            (object) ['k' => 'v', 'bar' => 2],
+            Inline::parse('{ <<: { k: v }, bar: 2 }', Yaml::PARSE_OBJECT_FOR_MAP),
+        );
+        $this->assertEquals(
+            (object) ['k' => 'v', 'l' => 'w', 'bar' => 2],
+            Inline::parse('{ <<: [{ k: v }, { l: w }], bar: 2 }', Yaml::PARSE_OBJECT_FOR_MAP),
+        );
+    }
+
+    /**
+     * @dataProvider getInvalidMergeKeys
+     */
+    public function testParseInvalidMergeKey(string $yaml, string $message)
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage($message);
+
+        Inline::parse($yaml);
+    }
+
+    public static function getInvalidMergeKeys(): iterable
+    {
+        yield 'scalar' => ['{ <<: foo, bar: 2 }', 'YAML merge keys used with a scalar value instead of an array'];
+        yield 'null' => ['{ <<: ~, bar: 2 }', 'YAML merge keys used with a scalar value instead of an array'];
+        yield 'sequence of scalars' => ['{ <<: [1, 2], bar: 2 }', 'Merge items must be arrays'];
+        yield 'sequence of nulls' => ['{ <<: [~], bar: 2 }', 'Merge items must be arrays'];
+    }
 }

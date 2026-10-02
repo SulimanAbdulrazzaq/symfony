@@ -343,7 +343,7 @@ class Parser
                                 }
 
                                 if (!\is_array($parsedItem)) {
-                                    throw new ParseException('Merge items must be arrays.', $this->getRealCurrentLineNb() + 1, $parsedItem, $this->filename);
+                                    throw new ParseException('Merge items must be arrays.', $this->getRealCurrentLineNb() + 1, $this->currentLine, $this->filename);
                                 }
 
                                 $data += $parsedItem; // array union
@@ -387,6 +387,10 @@ class Parser
 
                             if (Yaml::PARSE_OBJECT_FOR_MAP & $flags && $value instanceof \stdClass) {
                                 $value = (array) $value;
+                            }
+
+                            if (!\is_array($value)) {
+                                throw new ParseException('YAML merge keys used with a scalar value instead of an array.', $this->getRealCurrentLineNb() + 1, $this->currentLine, $this->filename);
                             }
 
                             $data += $value;

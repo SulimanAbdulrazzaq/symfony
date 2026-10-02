@@ -3032,6 +3032,66 @@ class ParserTest extends TestCase
         $this->assertSameData($expected, $this->parser->parse($yaml, Yaml::PARSE_OBJECT_FOR_MAP));
     }
 
+    public function testMergeKeysInFlowMappingsWhenMappingsAreParsedAsObjects()
+    {
+        $yaml = <<<YAML
+            foo: &FOO { bar: 1 }
+            bar: { baz: 2, <<: *FOO }
+            baz: { <<: { baz_bar: 4 }, baz_foo: 3 }
+            foobar: { bar: ~, <<: [*FOO, { baz: 2 }] }
+            list:
+                - { <<: *FOO, baz: 5 }
+            YAML;
+        $expected = (object) [
+            'foo' => (object) [
+                'bar' => 1,
+            ],
+            'bar' => (object) [
+                'baz' => 2,
+                'bar' => 1,
+            ],
+            'baz' => (object) [
+                'baz_bar' => 4,
+                'baz_foo' => 3,
+            ],
+            'foobar' => (object) [
+                'bar' => null,
+                'baz' => 2,
+            ],
+            'list' => [
+                (object) [
+                    'bar' => 1,
+                    'baz' => 5,
+                ],
+            ],
+        ];
+
+        $this->assertSameData($expected, $this->parser->parse($yaml, Yaml::PARSE_OBJECT_FOR_MAP));
+    }
+
+    public function testMergeKeyWithAnchoredScalarValue()
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('YAML merge keys used with a scalar value instead of an array');
+
+        $this->parser->parse(<<<YAML
+            foo:
+                <<: &anchor
+                    bar
+            YAML);
+    }
+
+    public function testMergeKeyWithTaggedItemsThrowsAParseException()
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('Merge items must be arrays');
+
+        $this->parser->parse(<<<YAML
+            foo:
+                <<: [!custom bar]
+            YAML, Yaml::PARSE_CUSTOM_TAGS);
+    }
+
     public function testFilenamesAreParsedAsStringsWithoutFlag()
     {
         $file = __DIR__.'/Fixtures/index.yml';

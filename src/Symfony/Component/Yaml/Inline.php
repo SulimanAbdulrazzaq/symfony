@@ -586,6 +586,14 @@ class Inline
                             // But overwriting is allowed when a merge node is used in current block.
                             if ('<<' === $key) {
                                 foreach ($value as $parsedValue) {
+                                    if ($parsedValue instanceof \stdClass) {
+                                        $parsedValue = (array) $parsedValue;
+                                    }
+
+                                    if (!\is_array($parsedValue)) {
+                                        throw new ParseException('Merge items must be arrays.', self::$parsedLineNumber + 1, $mapping);
+                                    }
+
                                     $output += $parsedValue;
                                 }
                             } elseif ($allowOverwrite || !isset($output[$key])) {
@@ -609,7 +617,7 @@ class Inline
                             // are processed sequentially.
                             // But overwriting is allowed when a merge node is used in current block.
                             if ('<<' === $key) {
-                                $output += $value;
+                                $output += self::getMergeKeyValue($value, $mapping);
                             } elseif ($allowOverwrite || !isset($output[$key])) {
                                 if (null !== $tag) {
                                     $output[$key] = new TaggedValue($tag, $value);
@@ -630,7 +638,7 @@ class Inline
                             // are processed sequentially.
                             // But overwriting is allowed when a merge node is used in current block.
                             if ('<<' === $key) {
-                                $output += $value;
+                                $output += self::getMergeKeyValue($value, $mapping);
                             } elseif ($allowOverwrite || !isset($output[$key])) {
                                 if (null !== $tag) {
                                     $output[$key] = new TaggedValue($tag, $value);
@@ -652,6 +660,24 @@ class Inline
         } finally {
             $state->leaveNestingLevel();
         }
+    }
+
+    /**
+     * Returns the value of a "<<" key as an array that can be merged into the enclosing mapping.
+     *
+     * @throws ParseException When the value is not a mapping
+     */
+    private static function getMergeKeyValue(mixed $value, string $mapping): array
+    {
+        if ($value instanceof \stdClass) {
+            $value = (array) $value;
+        }
+
+        if (!\is_array($value)) {
+            throw new ParseException('YAML merge keys used with a scalar value instead of an array.', self::$parsedLineNumber + 1, $mapping);
+        }
+
+        return $value;
     }
 
     /**
