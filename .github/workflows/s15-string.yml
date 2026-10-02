@@ -1,0 +1,23 @@
+name: s15-string-explore
+on: push
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          sparse-checkout: |
+            src/Symfony/Component/String
+      - run: git log -3 --format='%H %T %s'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl, mbstring
+      - name: composer install
+        working-directory: src/Symfony/Component/String
+        run: composer install --no-interaction --no-progress
+      - name: wordwrap differential
+        working-directory: src/Symfony/Component/String
+        run: php string_diff.php
